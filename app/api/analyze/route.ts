@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
         // Use Gemini 3 Pro (most advanced model with better audio analysis)
         const model = genAI.getGenerativeModel({
-            model: "gemini-3-pro",
+            model: "gemini-3-pro-preview",
             generationConfig: {
                 temperature: 0.7, // Balanced creativity
                 topP: 0.8,
