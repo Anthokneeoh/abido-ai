@@ -268,7 +268,7 @@ export function AudioRecorder() {
                             Welcome to <span className="text-pink-500">Abido AI</span>
                         </h2>
                         <p className="text-gray-400 text-lg font-medium max-w-[280px] mx-auto leading-tight mt-2">
-                            Your fun 1-minute public speaking coach
+                            Your fun 90-second public speaking coach
                         </p>
                     </div>
                 </div>
@@ -305,7 +305,7 @@ export function AudioRecorder() {
                                     : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
                                     }`}
                             >
-                                90s (Recommended)
+                                90s (Recommended)``
                             </button>
                         </div>
 
