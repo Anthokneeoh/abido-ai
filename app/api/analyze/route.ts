@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
-        // Use Gemini 2.5 Pro (As requested)
+        // Use Gemini 2.5 Pro 
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-pro",
             generationConfig: {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
             }
         });
 
-        // --- CONSOLIDATED SUPER PROMPT (TEAM CRITERIA + GATEKEEPER) ---
+
         const prompt = `
 You are 'Abido', an expert public speaking coach.
 
@@ -50,7 +50,7 @@ PHASE 2: RIGOROUS ANALYSIS (If speech is detected)
 Evaluate the speech based on these 6 DIMENSIONS from the expert criteria:
 1. Confidence (Vocal steadiness, lack of self-undermining)
 2. Pace (Timing, rhythm, flow)
-3. Filler Words (Frequency of 'um', 'uh', 'like')
+3. Filler Words (Frequency based on the FULL FILLER WORDS LIST below)
 4. Clarity (Articulation, intelligibility)
 5. Message Strength (Logic and structure)
 6. Authority (Command of the room)
@@ -61,7 +61,9 @@ Map your deep analysis to this exact JSON structure required by the app.
 CRITICAL TRANSCRIPTION RULE:
 - The "transcript" field must be VERBATIM. 
 - Write exactly what was said word-for-word.
-- DO NOT SUMMARIZE. DO NOT TRUNCATE. Catch every "um" and "ah".
+- DO NOT SUMMARIZE. DO NOT TRUNCATE. Catch every single filler word in the list.
+
+FILLER WORDS LIST: um, uh, like, you know, so, actually, basically, literally, kind of, sort of, I mean, right, okay, well, sha, abi
 
 OUTPUT FORMAT (JSON Only):
 {
@@ -109,9 +111,9 @@ OUTPUT FORMAT (JSON Only):
         console.error("Gemini 2.5 Pro Error:", error);
         return NextResponse.json(
             {
-                error: "Analysis failed. Please try again with a 10-60 second recording.",
+                error: "Analysis failed. Please try again with a 30-90 seconds recording.",
                 details: error.message || "Unknown error",
-                suggestion: "Speak clearly for at least 10 seconds. Ensure microphone is working."
+                suggestion: "Speak clearly for at least 30 seconds. Ensure microphone is working."
             },
             { status: 500 }
         );
