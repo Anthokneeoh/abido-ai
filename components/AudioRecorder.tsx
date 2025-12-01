@@ -132,9 +132,17 @@ export function AudioRecorder() {
                 })
             }, 1000)
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("Microphone error:", err)
-            setError("Microphone access denied. Please enable it in browser settings.")
+
+            // ✅ FIX: Enhanced error message for Microphone permission denial
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                setError(
+                    "Microphone Permission Denied. To fix this, go to your phone's Settings > Privacy/Security > Microphone, and manually enable access for your browser (Chrome/Safari)."
+                )
+            } else {
+                setError("Microphone access failed. Ensure your device has a mic and try refreshing.")
+            }
         }
     }
 
@@ -244,20 +252,19 @@ export function AudioRecorder() {
                 </div>
             )}
 
-            {/* 1. HEADER (REVERTED LOGO LAYOUT & FONT SIZE REDUCTION) */}
+            {/* 1. HEADER (UPDATED LAYOUT) */}
             {!feedback && !isLoading && (
                 <div className="flex flex-col items-center gap-2 mb-2 animate-in fade-in w-full">
-                    {/* Logo on top, Abido name below (as originally intended) */}
-                    <div className="flex flex-col items-center mb-2">
-                        <div className="bg-yellow-400 p-3 rounded-2xl rotate-3 shadow-lg mb-2">
-                            <MessageCircle className="h-8 w-8 text-yellow-900 fill-yellow-900" />
+                    {/* Row Layout for Logo + Name */}
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="bg-yellow-400 p-2 rounded-xl rotate-3 shadow-lg">
+                            <MessageCircle className="h-6 w-6 text-yellow-900 fill-yellow-900" />
                         </div>
                         <h1 className="text-3xl font-bold text-orange-400 tracking-tight">Abido</h1>
                     </div>
 
                     <div className="text-center space-y-1">
-                        {/* Font size reduced from text-4xl to text-3xl for mobile single line */}
-                        <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+                        <h2 className="text-4xl font-extrabold text-white">
                             Welcome to <span className="text-pink-500">Abido AI</span>
                         </h2>
                         <p className="text-gray-400 text-lg font-medium max-w-[280px] mx-auto leading-tight mt-2">
@@ -284,8 +291,8 @@ export function AudioRecorder() {
                                     key={time}
                                     onClick={() => setSelectedDuration(time)}
                                     className={`py-3 rounded-2xl font-semibold transition-all ${selectedDuration === time
-                                        ? "bg-[#2c2c2e] text-white border-2 border-pink-500"
-                                        : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c] border-2 border-transparent"
+                                            ? "bg-[#2c2c2e] text-white border-2 border-pink-500"
+                                            : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c] border-2 border-transparent"
                                         }`}
                                 >
                                     {time}s
@@ -294,8 +301,8 @@ export function AudioRecorder() {
                             <button
                                 onClick={() => setSelectedDuration(60)}
                                 className={`col-span-2 py-3 rounded-2xl font-semibold transition-all ${selectedDuration === 60
-                                    ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
-                                    : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
+                                        ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
+                                        : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
                                     }`}
                             >
                                 60s (Recommended)
@@ -358,10 +365,10 @@ export function AudioRecorder() {
                             <div className="h-full bg-gradient-to-r from-pink-500 to-purple-500 animate-[loading_2s_ease-in-out_infinite] w-full origin-left"></div>
                         </div>
 
-                        {/* Updated Footer Text */}
+                        {/* UPDATED FOOTER TEXT IN LOADING BOX */}
                         <div className="text-center mt-6 space-y-1">
                             <p className="text-xs text-gray-500 font-mono">Powered by Gemini's latest Pro model</p>
-                            <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">High Precision Mode</p>
+                            <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">HIGH PRECISION MODE</p>
                         </div>
                     </div>
                 )}
@@ -441,12 +448,12 @@ export function AudioRecorder() {
                 )}
             </div>
 
-            {/* Footer (FINAL MOBILE OPTIMIZATION) */}
+            {/* Footer */}
             <div className="text-center space-y-1 mt-2 pb-6">
                 <p className="text-xs text-gray-500">
                     Powered by Gemini's latest Pro model
                 </p>
-                <p className="text-[10px] text-gray-600 uppercase tracking-wide opacity-80">
+                <p className="text-[10px] text-gray-600 uppercase tracking-wide">
                     Analysis is experimental
                 </p>
             </div>
