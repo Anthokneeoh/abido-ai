@@ -30,7 +30,7 @@ export function AudioRecorder() {
     const [feedback, setFeedback] = useState<Feedback | null>(null)
     const [error, setError] = useState<string>("")
     const [recordingTime, setRecordingTime] = useState(0)
-    const [selectedDuration, setSelectedDuration] = useState<number>(60)
+    const [selectedDuration, setSelectedDuration] = useState<number>(90)
 
     // State for cycling loading messages
     const [loadingMsgIndex, setLoadingMsgIndex] = useState(0)
@@ -286,7 +286,7 @@ export function AudioRecorder() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 w-full max-w-[280px]">
-                            {[10, 20, 30, 45].map((time) => (
+                            {[30, 45, 60, 75].map((time) => (
                                 <button
                                     key={time}
                                     onClick={() => setSelectedDuration(time)}
@@ -299,13 +299,13 @@ export function AudioRecorder() {
                                 </button>
                             ))}
                             <button
-                                onClick={() => setSelectedDuration(60)}
-                                className={`col-span-2 py-3 rounded-2xl font-semibold transition-all ${selectedDuration === 60
+                                onClick={() => setSelectedDuration(90)}
+                                className={`col-span-2 py-3 rounded-2xl font-semibold transition-all ${selectedDuration === 90
                                     ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
                                     : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
                                     }`}
                             >
-                                60s (Recommended)
+                                90s (Recommended)
                             </button>
                         </div>
 
@@ -443,7 +443,7 @@ export function AudioRecorder() {
                             <p className="mt-2 text-left p-4 bg-black/30 rounded-xl italic text-gray-300 leading-relaxed border border-gray-800">
                                 "{feedback.transcript}"
                             </p>
-                        </details>
+                        </details>``
                     </div>
                 )}
             </div>
