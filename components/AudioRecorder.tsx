@@ -15,7 +15,7 @@ interface Feedback {
     confidence_score: number
 }
 
-// 🚀 PREMIUM LOADING MESSAGES
+//  PREMIUM LOADING MESSAGES
 const LOADING_MESSAGES = [
     "Listening to your tone...",
     "Detecting filler words...",
@@ -44,7 +44,7 @@ export function AudioRecorder() {
     const chunksRef = useRef<BlobPart[]>([])
     const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-    // 🔄 Cycle through loading messages every 2.5s
+    //  Cycle through loading messages every 2.5s
     useEffect(() => {
         let interval: NodeJS.Timeout
         if (isLoading) {
@@ -55,7 +55,7 @@ export function AudioRecorder() {
         return () => clearInterval(interval)
     }, [isLoading])
 
-    // ⏲️ Auto-Dismiss Error Toast Logic
+    // ⏲ Auto-Dismiss Error Toast Logic
     useEffect(() => {
         if (error && !isErrorPaused) {
             const timer = setTimeout(() => {
@@ -65,7 +65,7 @@ export function AudioRecorder() {
         }
     }, [error, isErrorPaused])
 
-    // 👆 Swipe Detection Logic
+    //  Swipe Detection Logic
     const onTouchStart = (e: React.TouchEvent) => {
         setTouchEnd(null) // Reset
         setTouchStart(e.targetTouches[0].clientY)
@@ -135,7 +135,7 @@ export function AudioRecorder() {
         } catch (err: any) {
             console.error("Microphone error:", err)
 
-            // ✅ FIX: Enhanced error message for Microphone permission denial
+            // FIX: Enhanced error message for Microphone permission denial
             if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
                 setError(
                     "Microphone Permission Denied. To fix this, go to your phone's Settings > Privacy/Security > Microphone, and manually enable access for your browser (Chrome/Safari)."
@@ -164,7 +164,7 @@ export function AudioRecorder() {
         setLoadingMsgIndex(0) // Reset message to start
         setError("") // Clear previous errors
 
-        // ⏳ Smart Delay: Ensure animation plays for at least 3s
+        // Smart Delay: Ensure animation plays for at least 3s
         const minDelayPromise = new Promise(resolve => setTimeout(resolve, 3000));
 
         const formData = new FormData()
@@ -220,7 +220,7 @@ export function AudioRecorder() {
     return (
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6 font-sans relative">
 
-            {/* 🔔 PREMIUM ERROR TOAST */}
+            {/* PREMIUM ERROR TOAST */}
             {error && (
                 <div className="fixed top-6 left-4 right-4 z-50 flex justify-center pointer-events-none">
                     <div
@@ -264,7 +264,7 @@ export function AudioRecorder() {
                     </div>
 
                     <div className="text-center space-y-1">
-                        <h2 className="text-4xl font-extrabold text-white">
+                        <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
                             Welcome to <span className="text-pink-500">Abido AI</span>
                         </h2>
                         <p className="text-gray-400 text-lg font-medium max-w-[280px] mx-auto leading-tight mt-2">
@@ -291,8 +291,8 @@ export function AudioRecorder() {
                                     key={time}
                                     onClick={() => setSelectedDuration(time)}
                                     className={`py-3 rounded-2xl font-semibold transition-all ${selectedDuration === time
-                                            ? "bg-[#2c2c2e] text-white border-2 border-pink-500"
-                                            : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c] border-2 border-transparent"
+                                        ? "bg-[#2c2c2e] text-white border-2 border-pink-500"
+                                        : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c] border-2 border-transparent"
                                         }`}
                                 >
                                     {time}s
@@ -301,8 +301,8 @@ export function AudioRecorder() {
                             <button
                                 onClick={() => setSelectedDuration(60)}
                                 className={`col-span-2 py-3 rounded-2xl font-semibold transition-all ${selectedDuration === 60
-                                        ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
-                                        : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
+                                    ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
+                                    : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
                                     }`}
                             >
                                 60s (Recommended)
@@ -459,4 +459,4 @@ export function AudioRecorder() {
             </div>
         </div>
     )
-}
+} ``
