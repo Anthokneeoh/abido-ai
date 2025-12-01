@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Mic, Square, Loader2, Sparkles, RefreshCw, MessageCircle, AlertCircle, BarChart3, Waves } from "lucide-react"
+import { Mic, Square, Loader2, Sparkles, RefreshCw, MessageCircle, AlertCircle, BarChart3, Waves, X } from "lucide-react"
 
 interface Feedback {
     transcript: string
@@ -35,6 +35,11 @@ export function AudioRecorder() {
     // State for cycling loading messages
     const [loadingMsgIndex, setLoadingMsgIndex] = useState(0)
 
+    // State for Toast Interactions
+    const [isErrorPaused, setIsErrorPaused] = useState(false)
+    const [touchStart, setTouchStart] = useState<number | null>(null)
+    const [touchEnd, setTouchEnd] = useState<number | null>(null)
+
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<BlobPart[]>([])
     const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -49,6 +54,39 @@ export function AudioRecorder() {
         }
         return () => clearInterval(interval)
     }, [isLoading])
+
+    // ⏲️ Auto-Dismiss Error Toast Logic
+    useEffect(() => {
+        if (error && !isErrorPaused) {
+            const timer = setTimeout(() => {
+                setError("")
+            }, 5000) // Auto dismiss after 5 seconds
+            return () => clearTimeout(timer)
+        }
+    }, [error, isErrorPaused])
+
+    // 👆 Swipe Detection Logic
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null) // Reset
+        setTouchStart(e.targetTouches[0].clientY)
+        setIsErrorPaused(true) // Pause timer while holding
+    }
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientY)
+    }
+
+    const onTouchEnd = () => {
+        setIsErrorPaused(false) // Resume timer
+        if (!touchStart || !touchEnd) return
+
+        const distance = touchStart - touchEnd
+        const isUpSwipe = distance > 50 // Minimum swipe distance
+
+        if (isUpSwipe) {
+            setError("") // Dismiss
+        }
+    }
 
     const startRecording = async () => {
         try {
@@ -116,8 +154,9 @@ export function AudioRecorder() {
     const analyzeAudio = async (audioBlob: Blob) => {
         setIsLoading(true)
         setLoadingMsgIndex(0) // Reset message to start
+        setError("") // Clear previous errors
 
-        // ⏳ Smart Delay: Ensure animation plays for at least 3s even if API is instant
+        // ⏳ Smart Delay: Ensure animation plays for at least 3s
         const minDelayPromise = new Promise(resolve => setTimeout(resolve, 3000));
 
         const formData = new FormData()
@@ -171,7 +210,40 @@ export function AudioRecorder() {
     }
 
     return (
-        <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6 font-sans">
+        <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6 font-sans relative">
+
+            {/* 🔔 PREMIUM ERROR TOAST */}
+            {/* Fixed position ensures it floats above everything on mobile */}
+            {error && (
+                <div className="fixed top-6 left-4 right-4 z-50 flex justify-center pointer-events-none">
+                    <div
+                        className="bg-red-500/95 backdrop-blur-md text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 pointer-events-auto cursor-grab active:cursor-grabbing touch-none max-w-sm w-full animate-in slide-in-from-top-4 duration-500"
+                        style={{
+                            animationTimingFunction: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" // Premium Bounce Effect
+                        }}
+                        onMouseEnter={() => setIsErrorPaused(true)}
+                        onMouseLeave={() => setIsErrorPaused(false)}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                    >
+                        <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5 text-white/90" />
+                        <div className="flex-1">
+                            <p className="font-bold text-base">Analysis Error</p>
+                            <p className="text-sm text-white/90 leading-tight mt-1">{error}</p>
+                            <p className="text-[10px] text-white/60 mt-2 uppercase tracking-wider font-bold">
+                                {isErrorPaused ? "Paused" : "Swipe up to dismiss"}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setError("")}
+                            className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* 1. HEADER */}
             {!feedback && !isLoading && (
@@ -193,13 +265,6 @@ export function AudioRecorder() {
 
             {/* 2. MAIN CARD */}
             <div className="w-full bg-[#1c1c1e] border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden transition-all duration-500">
-
-                {error && (
-                    <div className="absolute top-4 left-4 right-4 bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-red-200 text-sm flex items-start gap-2 z-50">
-                        <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                        <div><p className="font-bold">Error</p><p>{error}</p></div>
-                    </div>
-                )}
 
                 {/* STATE A: SELECTION */}
                 {!isRecording && !isLoading && !feedback && (
