@@ -215,8 +215,8 @@ export function AudioRecorder() {
                                     key={time}
                                     onClick={() => setSelectedDuration(time)}
                                     className={`py-3 rounded-2xl font-semibold transition-all ${selectedDuration === time
-                                            ? "bg-[#2c2c2e] text-white border-2 border-pink-500"
-                                            : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c] border-2 border-transparent"
+                                        ? "bg-[#2c2c2e] text-white border-2 border-pink-500"
+                                        : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c] border-2 border-transparent"
                                         }`}
                                 >
                                     {time}s
@@ -225,8 +225,8 @@ export function AudioRecorder() {
                             <button
                                 onClick={() => setSelectedDuration(60)}
                                 className={`col-span-2 py-3 rounded-2xl font-semibold transition-all ${selectedDuration === 60
-                                        ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
-                                        : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
+                                    ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20"
+                                    : "bg-[#2c2c2e] text-gray-400 hover:bg-[#3a3a3c]"
                                     }`}
                             >
                                 60s (Recommended)
@@ -291,7 +291,7 @@ export function AudioRecorder() {
 
                         {/* Updated Footer Text */}
                         <p className="text-xs text-gray-500 mt-6 font-mono">
-                            Powered by Gemini AI • High Precision Mode
+                            Powered by Gemini’s latest pro model • High Precision Mode
                         </p>
                     </div>
                 )}
@@ -370,7 +370,7 @@ export function AudioRecorder() {
                     </div>
                 )}
             </div>
-            <p className="text-xs text-gray-600 text-center mt-2">Powered by Gemini AI • Analysis is experimental</p>
+            <p className="text-xs text-gray-600 text-center mt-2">Powered by Gemini’s latest pro model • Analysis is experimental</p>
         </div>
     )
 }

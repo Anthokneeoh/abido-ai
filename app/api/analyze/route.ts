@@ -73,7 +73,7 @@ OUTPUT FORMAT (JSON Only):
   "filler_count": number (Total integer count of fillers),
   "strength": "The single strongest aspect based on the 6 dimensions",
   "improvement_tip": "The most urgent thing to fix (derived from the lowest scoring dimension)",
-  "encouragement": "Direct, grounded feedback based on the analysis. No sugar-coating."
+  "encouragement": "IF SCORE < 50: Be extra supportive and kind (e.g., 'Don't worry, even pros start here. Fixing this one habit will double your score next time.'). IF SCORE > 50: Direct, grounded feedback."
 }
 `;
 
