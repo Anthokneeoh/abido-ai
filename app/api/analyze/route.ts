@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
-        // Use Gemini 2.5 Pro (most advanced model with better audio analysis)
+        // Use Gemini 2.5 Pro (As requested)
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-pro",
             generationConfig: {
@@ -33,70 +33,52 @@ export async function POST(request: Request) {
             }
         });
 
-        // Enhanced prompt for Gemini 2.5 Pro's superior audio analysis
+        // --- CONSOLIDATED SUPER PROMPT (TEAM CRITERIA + GATEKEEPER) ---
         const prompt = `
-You are an expert public speaking coach analyzing a speech recording for the Abido AI app.
+You are 'Abido', an expert public speaking coach.
 
-CRITICAL: Your analysis must be accurate and based ONLY on what you actually hear in the audio.
+PHASE 1: THE SILENCE GATEKEEPER
+First, listen to the audio file.
+IF the audio is mostly silence, background noise, music, or unintelligible mumbling:
+- Return a JSON with "confidence_score": 0
+- Set "transcript" to: "[No clear speech detected. Please speak closer to the microphone.]"
+- Set "overall_vibe" to "Unclear"
+- Set "encouragement" to "I couldn't hear you clearly. Try recording again in a quiet place."
+- Stop analysis here.
 
-TASK 1: TRANSCRIPTION
-- Write exactly what you hear, word-for-word
-- Include ALL filler words (um, uh, like, you know, so, actually, basically, literally)
-- Maintain the speaker's exact phrasing
+PHASE 2: RIGOROUS ANALYSIS (If speech is detected)
+Evaluate the speech based on these 6 DIMENSIONS from the expert criteria:
+1. Confidence (Vocal steadiness, lack of self-undermining)
+2. Pace (Timing, rhythm, flow)
+3. Filler Words (Frequency of 'um', 'uh', 'like')
+4. Clarity (Articulation, intelligibility)
+5. Message Strength (Logic and structure)
+6. Authority (Command of the room)
 
-TASK 2: ANALYSIS
-Analyze these aspects:
-1. CONFIDENCE: Vocal strength, hesitation, assertiveness (0-100 scale)
-   - 85-100: Very confident, strong delivery
-   - 70-84: Good confidence with minor hesitations
-   - 50-69: Moderate confidence, some uncertainty
-   - 30-49: Low confidence, frequent hesitation
-   - 0-29: Very nervous or unclear
+PHASE 3: OUTPUT GENERATION (Strict JSON)
+Map your deep analysis to this exact JSON structure required by the app.
 
-2. FILLER WORDS: Count EACH occurrence of: um, uh, like, you know, so, actually, basically, literally, kind of, sort of
+CRITICAL TRANSCRIPTION RULE:
+- The "transcript" field must be VERBATIM. 
+- Write exactly what was said word-for-word.
+- DO NOT SUMMARIZE. DO NOT TRUNCATE. Catch every "um" and "ah".
 
-3. OVERALL VIBE: Choose the most accurate descriptor
-   - Confident: Strong, assured, clear delivery
-   - Nervous: Hesitant, shaky, uncertain
-   - Natural: Conversational, comfortable, authentic
-   - Rushed: Too fast, hard to follow
-   - Monotone: Flat, lacks energy
-   - Enthusiastic: High energy, engaging
-
-4. ENERGY LEVEL: Choose ONE: High | Medium | Low
-
-5. STRENGTHS: Identify ONE specific thing they did well
-
-6. IMPROVEMENT: Give ONE actionable tip
-
-7. ENCOURAGEMENT: Write 1-2 sentences of genuine, specific encouragement
-
-IMPORTANT RULES:
-- Base confidence_score on ACTUAL vocal qualities you hear
-- Count filler words accurately - don't guess
-- If audio is too short (under 5 seconds), note this in feedback
-- If audio is unclear, mention it
-- Be honest but supportive
-
-OUTPUT FORMAT (strict JSON, no markdown):
+OUTPUT FORMAT (JSON Only):
 {
-  "transcript": "exact transcription here",
-  "confidence_score": 75,
-  "overall_vibe": "Confident",
-  "energy_level": "Medium",
-  "filler_words": "um (2), like (3), you know (1)",
-  "filler_count": 6,
-  "strength": "specific strength observed",
-  "improvement_tip": "one actionable improvement",
-  "encouragement": "encouraging message based on actual performance"
+  "transcript": "Full word-for-word text here...",
+  "confidence_score": number (Calculate an overall 0-100 score based on Confidence + Authority dimensions),
+  "overall_vibe": "One of: Confident | Nervous | Natural | Rushed | Monotone | Enthusiastic",
+  "energy_level": "High | Medium | Low",
+  "filler_words": "List detected fillers (e.g., 'um (2), like (1)')",
+  "filler_count": number (Total integer count of fillers),
+  "strength": "The single strongest aspect based on the 6 dimensions",
+  "improvement_tip": "The most urgent thing to fix (derived from the lowest scoring dimension)",
+  "encouragement": "Direct, grounded feedback based on the analysis. No sugar-coating."
 }
-
-Now analyze this speech recording:
 `;
 
         console.log("Sending to Gemini 2.5 Pro...");
 
-        // Send to Gemini 2.5 Pro
         const result = await model.generateContent([
             prompt,
             {
@@ -107,66 +89,24 @@ Now analyze this speech recording:
             },
         ]);
 
-        // Parse response
         const responseText = result.response.text();
-        console.log("Raw response:", responseText.substring(0, 200) + "...");
 
-        // Clean JSON from markdown formatting
         let cleanJson = responseText.trim();
-
-        // Remove markdown code blocks if present
         if (cleanJson.startsWith("```")) {
             cleanJson = cleanJson.replace(/```json\n?/g, "").replace(/```\n?/g, "");
         }
-
         cleanJson = cleanJson.trim();
 
-        // Parse and validate
         const feedback = JSON.parse(cleanJson);
 
-        // Validate required fields
-        const requiredFields = [
-            "transcript",
-            "confidence_score",
-            "overall_vibe",
-            "energy_level",
-            "filler_words",
-            "filler_count",
-            "strength",
-            "improvement_tip",
-            "encouragement"
-        ];
-
-        for (const field of requiredFields) {
-            if (!(field in feedback)) {
-                throw new Error(`Missing required field: ${field}`);
-            }
-        }
-
-        // Ensure confidence_score is a number
-        feedback.confidence_score = parseInt(feedback.confidence_score);
-        if (isNaN(feedback.confidence_score)) {
-            feedback.confidence_score = 50; // Default fallback
-        }
-
-        // Ensure filler_count is a number
-        feedback.filler_count = parseInt(feedback.filler_count);
-        if (isNaN(feedback.filler_count)) {
-            feedback.filler_count = 0; // Default fallback
-        }
-
-        console.log("Analysis successful:", {
-            confidence: feedback.confidence_score,
-            fillers: feedback.filler_count,
-            vibe: feedback.overall_vibe
-        });
+        // Validation & Fallbacks
+        feedback.confidence_score = parseInt(feedback.confidence_score) || 50;
+        feedback.filler_count = parseInt(feedback.filler_count) || 0;
 
         return NextResponse.json(feedback);
 
     } catch (error: any) {
         console.error("Gemini 2.5 Pro Error:", error);
-
-        // Return detailed error for debugging
         return NextResponse.json(
             {
                 error: "Analysis failed. Please try again with a 10-60 second recording.",
