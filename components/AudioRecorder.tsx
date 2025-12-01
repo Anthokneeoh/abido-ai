@@ -6,7 +6,7 @@ import { Mic, Square, Loader2, Sparkles, RefreshCw, MessageCircle, AlertCircle, 
 interface Feedback {
     transcript: string
     overall_vibe: string
-    energy_level: string
+    energy_level: string;
     filler_words: string
     filler_count: number
     strength: string
@@ -213,13 +213,12 @@ export function AudioRecorder() {
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-6 font-sans relative">
 
             {/* 🔔 PREMIUM ERROR TOAST */}
-            {/* Fixed position ensures it floats above everything on mobile */}
             {error && (
                 <div className="fixed top-6 left-4 right-4 z-50 flex justify-center pointer-events-none">
                     <div
                         className="bg-red-500/95 backdrop-blur-md text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 pointer-events-auto cursor-grab active:cursor-grabbing touch-none max-w-sm w-full animate-in slide-in-from-top-4 duration-500"
                         style={{
-                            animationTimingFunction: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" // Premium Bounce Effect
+                            animationTimingFunction: "cubic-bezier(0.68, -0.55, 0.27, 1.55)"
                         }}
                         onMouseEnter={() => setIsErrorPaused(true)}
                         onMouseLeave={() => setIsErrorPaused(false)}
@@ -245,15 +244,20 @@ export function AudioRecorder() {
                 </div>
             )}
 
-            {/* 1. HEADER */}
+            {/* 1. HEADER (REVERTED LOGO LAYOUT & FONT SIZE REDUCTION) */}
             {!feedback && !isLoading && (
-                <div className="flex flex-col items-center gap-2 mb-2 animate-in fade-in">
-                    <div className="bg-yellow-400 p-3 rounded-2xl rotate-3 shadow-lg mb-2">
-                        <MessageCircle className="h-8 w-8 text-yellow-900 fill-yellow-900" />
+                <div className="flex flex-col items-center gap-2 mb-2 animate-in fade-in w-full">
+                    {/* Logo on top, Abido name below (as originally intended) */}
+                    <div className="flex flex-col items-center mb-2">
+                        <div className="bg-yellow-400 p-3 rounded-2xl rotate-3 shadow-lg mb-2">
+                            <MessageCircle className="h-8 w-8 text-yellow-900 fill-yellow-900" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-orange-400 tracking-tight">Abido</h1>
                     </div>
-                    <h1 className="text-3xl font-bold text-orange-400 tracking-tight">Abido</h1>
+
                     <div className="text-center space-y-1">
-                        <h2 className="text-4xl font-extrabold text-white">
+                        {/* Font size reduced from text-4xl to text-3xl for mobile single line */}
+                        <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
                             Welcome to <span className="text-pink-500">Abido AI</span>
                         </h2>
                         <p className="text-gray-400 text-lg font-medium max-w-[280px] mx-auto leading-tight mt-2">
@@ -355,9 +359,10 @@ export function AudioRecorder() {
                         </div>
 
                         {/* Updated Footer Text */}
-                        <p className="text-xs text-gray-500 mt-6 font-mono">
-                            Powered by Gemini’s latest pro model • High Precision Mode
-                        </p>
+                        <div className="text-center mt-6 space-y-1">
+                            <p className="text-xs text-gray-500 font-mono">Powered by Gemini AI</p>
+                            <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">High Precision Mode</p>
+                        </div>
                     </div>
                 )}
 
@@ -435,7 +440,16 @@ export function AudioRecorder() {
                     </div>
                 )}
             </div>
-            <p className="text-xs text-gray-600 text-center mt-2">Powered by Gemini’s latest pro model • Analysis is experimental</p>
+
+            {/* Footer (FINAL MOBILE OPTIMIZATION) */}
+            <div className="text-center space-y-1 mt-2 pb-6">
+                <p className="text-xs text-gray-500">
+                    Powered by Gemini's latest Pro model
+                </p>
+                <p className="text-[10px] text-gray-600 uppercase tracking-wide opacity-80">
+                    Analysis is experimental
+                </p>
+            </div>
         </div>
     )
 }
