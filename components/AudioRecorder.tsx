@@ -270,7 +270,7 @@ export function AudioRecorder() {
                         <p className="text-gray-400 text-lg font-medium max-w-[280px] mx-auto leading-tight mt-2">
                             Your fun 90-second public speaking coach
                         </p>
-                    </div>``
+                    </div>
                 </div>
             )}
 
