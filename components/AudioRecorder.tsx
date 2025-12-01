@@ -297,7 +297,7 @@ export function AudioRecorder() {
                                 >
                                     {time}s
                                 </button>
-                            ))}``
+                            ))}
                             <button
                                 onClick={() => setSelectedDuration(90)}
                                 className={`col-span-2 py-3 rounded-2xl font-semibold transition-all ${selectedDuration === 90
@@ -443,7 +443,7 @@ export function AudioRecorder() {
                             <p className="mt-2 text-left p-4 bg-black/30 rounded-xl italic text-gray-300 leading-relaxed border border-gray-800">
                                 "{feedback.transcript}"
                             </p>
-                        </details>``
+                        </details>
                     </div>
                 )}
             </div>
