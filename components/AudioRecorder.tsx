@@ -360,7 +360,7 @@ export function AudioRecorder() {
 
                         {/* Updated Footer Text */}
                         <div className="text-center mt-6 space-y-1">
-                            <p className="text-xs text-gray-500 font-mono">Powered by Gemini AI</p>
+                            <p className="text-xs text-gray-500 font-mono">Powered by Gemini's latest Pro model</p>
                             <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">High Precision Mode</p>
                         </div>
                     </div>
