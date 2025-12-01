@@ -371,7 +371,7 @@ export function AudioRecorder() {
 
             {/* Footer */}
             <p className="text-xs text-gray-600 text-center mt-2">
-                Powered by Gemini 3 Pro • Analysis is experimental
+                Powered by Gemini 2.5 Pro • Analysis is experimental
             </p>
         </div>
     )

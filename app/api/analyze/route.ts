@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Initialize Gemini 3 Pro
+// Initialize Gemini 2.5 Pro
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
 
 export async function POST(request: Request) {
@@ -23,9 +23,9 @@ export async function POST(request: Request) {
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
-        // Use Gemini 3 Pro (most advanced model with better audio analysis)
+        // Use Gemini 2.5 Pro (most advanced model with better audio analysis)
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro",
             generationConfig: {
                 temperature: 0.7, // Balanced creativity
                 topP: 0.8,
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
             }
         });
 
-        // Enhanced prompt for Gemini 3 Pro's superior audio analysis
+        // Enhanced prompt for Gemini 2.5 Pro's superior audio analysis
         const prompt = `
 You are an expert public speaking coach analyzing a speech recording for the Abido AI app.
 
@@ -94,9 +94,9 @@ OUTPUT FORMAT (strict JSON, no markdown):
 Now analyze this speech recording:
 `;
 
-        console.log("Sending to Gemini 3 Pro...");
+        console.log("Sending to Gemini 2.5 Pro...");
 
-        // Send to Gemini 3 Pro
+        // Send to Gemini 2.5 Pro
         const result = await model.generateContent([
             prompt,
             {
@@ -164,7 +164,7 @@ Now analyze this speech recording:
         return NextResponse.json(feedback);
 
     } catch (error: any) {
-        console.error("Gemini 3 Pro Error:", error);
+        console.error("Gemini 2.5 Pro Error:", error);
 
         // Return detailed error for debugging
         return NextResponse.json(
@@ -182,7 +182,7 @@ Now analyze this speech recording:
 export async function GET() {
     return NextResponse.json({
         status: "ok",
-        model: "gemini-3-pro",
+        model: "gemini-2.5-pro",
         timestamp: new Date().toISOString()
     });
 }
