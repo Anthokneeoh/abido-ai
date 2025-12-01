@@ -63,7 +63,7 @@ CRITICAL TRANSCRIPTION RULE:
 - Write exactly what was said word-for-word.
 - DO NOT SUMMARIZE. DO NOT TRUNCATE. Catch every single filler word in the list.
 
-FILLER WORDS LIST: um, uh, like, you know, so, actually, basically, literally, kind of, sort of, I mean, right, okay, well, sha, abi
+FILLER WORDS LIST: um, uh, like, you know, so, actually, yeah, basically, literally, kind of, sort of, I mean, right, okay, well, sha, abi
 
 OUTPUT FORMAT (JSON Only):
 {
