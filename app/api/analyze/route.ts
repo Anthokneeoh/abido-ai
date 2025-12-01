@@ -96,7 +96,7 @@ um, uh, like, you know, so, actually, basically, literally, kind of, sort of, I 
 
 **Scoring:**
 - 10: Zero fillers
-- 9: 1-2 fillers
+- 10: 1-2 fillers
 - 7-8: 3-5 fillers
 - 5-6: 6-10 fillers
 - 3-4: 11-15 fillers
@@ -104,17 +104,17 @@ um, uh, like, you know, so, actually, basically, literally, kind of, sort of, I 
 
 ### 4. CLARITY & ARTICULATION (1-10)
 **Measures:** Word enunciation, sentence structure, intelligibility
-- 9-10: Crystal clear, easy to follow
-- 7-8: Mostly clear, few mumbles
-- 5-6: Some unclear words
-- 3-4: Hard to understand
+- 10: Crystal clear, easy to follow
+- 9-10: Mostly clear, few mumbles
+- 7-8: Some unclear words
+- 5-6: Hard to understand
 - 1-2: Mostly unintelligible
 
 **Ignore:** Accent, dialect
 
 ### 5. MESSAGE STRUCTURE (1-10)
 **Measures:** Logical flow, point clarity, coherence
-- 9-10: Clear beginning/middle/end
+- 10: Clear beginning/middle/end
 - 7-8: Good structure, minor tangents
 - 5-6: Somewhat scattered
 - 3-4: Confusing structure
@@ -124,10 +124,10 @@ um, uh, like, you know, so, actually, basically, literally, kind of, sort of, I 
 
 ### 6. VOCAL AUTHORITY (1-10)
 **Measures:** Command of space, vocal control, decisiveness
-- 9-10: Commands attention effortlessly
-- 7-8: Solid presence
-- 5-6: Average authority
-- 3-4: Lacks command
+- 10: Commands attention effortlessly
+- 9-10: Solid presence
+- 7-8: Average authority
+- 5-6: Lacks command
 - 1-2: Timid delivery
 
 **Ignore:** Age, gender, personality assumptions
@@ -242,6 +242,7 @@ Now analyze the provided audio and return ONLY the JSON response.
         cleanJson = cleanJson.trim();
 
         const feedback = JSON.parse(cleanJson);
+
 
         // Validation & Fallbacks (enhanced)
         feedback.confidence_score = parseInt(feedback.confidence_score) || 50;
