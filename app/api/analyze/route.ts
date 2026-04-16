@@ -256,7 +256,7 @@ Now analyze the audio and return ONLY the JSON response.
             setTimeout(() => reject(new Error("Request timeout")), 30000)
         );
 
-        const response = await Promise.race([apiCall, timeoutPromise]);
+        const response = (await Promise.race([apiCall, timeoutPromise])) as Awaited<typeof apiCall>;
 
         const responseText = response.text;
         if (!responseText) {
@@ -325,7 +325,7 @@ Now analyze the audio and return ONLY the JSON response.
     }
 }
 
-// Health check endpoint
+// Health check endpoints
 export async function GET() {
     return NextResponse.json({
         status: "Operational",
