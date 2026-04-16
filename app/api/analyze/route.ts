@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
-// Validate API key at startup
 const apiKey = process.env.GOOGLE_API_KEY;
 if (!apiKey) {
     console.error("Missing GOOGLE_API_KEY environment variable");
 }
 
 export async function POST(request: Request) {
-    // AbortController for timeout (30 seconds)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     try {
         // 1. Parse and validate audio file
         const formData = await request.formData();
@@ -37,7 +32,6 @@ export async function POST(request: Request) {
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
-        // 3. Your full system prompt (restored exactly)
         const prompt = `
 # ABIDO AI - SPEECH ANALYSIS SYSTEM v2.2
 
@@ -237,11 +231,10 @@ IF confidence_score > 75:
 Now analyze the audio and return ONLY the JSON response.
 `;
 
-        // 4. Initialize Google GenAI (new SDK)
         const genAI = new GoogleGenAI({ apiKey: apiKey! });
 
-        // 5. Call Gemini 3 Flash Preview with audio
-        const response = await genAI.models.generateContent({
+        // 3. Call Gemini 3 Flash Preview with timeout using Promise.race
+        const apiCall = genAI.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: [
                 { text: prompt },
@@ -257,7 +250,13 @@ Now analyze the audio and return ONLY the JSON response.
                 topP: 0.85,
                 topK: 40,
             },
-        }, { signal: controller.signal });
+        });
+
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Request timeout")), 30000)
+        );
+
+        const response = await Promise.race([apiCall, timeoutPromise]);
 
         const responseText = response.text;
         if (!responseText) {
@@ -266,14 +265,14 @@ Now analyze the audio and return ONLY the JSON response.
 
         console.log("Raw API response preview:", responseText.substring(0, 200));
 
-        // 6. Clean JSON (remove markdown code blocks)
+        // 4. Clean JSON (remove markdown code blocks)
         let cleanJson = responseText.trim();
         if (cleanJson.includes("```")) {
             cleanJson = cleanJson.replace(/```json\n?/g, "").replace(/```\n?$/g, "").replace(/```/g, "");
         }
         cleanJson = cleanJson.trim();
 
-        // 7. Parse JSON
+        // 5. Parse JSON
         let feedback;
         try {
             feedback = JSON.parse(cleanJson);
@@ -282,7 +281,7 @@ Now analyze the audio and return ONLY the JSON response.
             throw new Error("AI returned invalid JSON format");
         }
 
-        // 8. Validate required fields
+        // 6. Validate required fields
         const requiredFields = [
             "transcript", "confidence_score", "overall_vibe", "energy_level",
             "filler_words", "filler_count", "strength", "improvement_tip", "encouragement"
@@ -294,7 +293,7 @@ Now analyze the audio and return ONLY the JSON response.
             }
         }
 
-        // 9. Sanitize numeric fields
+        // 7. Sanitize numeric fields
         let finalScore = parseInt(feedback.confidence_score);
         if (isNaN(finalScore)) {
             console.warn("Score parsing failed, using conservative fallback");
@@ -312,7 +311,7 @@ Now analyze the audio and return ONLY the JSON response.
         return NextResponse.json(feedback);
     } catch (error: any) {
         console.error("System error during analysis:", error);
-        if (error.name === "AbortError") {
+        if (error.message === "Request timeout") {
             return NextResponse.json({ error: "Request timeout" }, { status: 504 });
         }
         return NextResponse.json(
@@ -323,8 +322,6 @@ Now analyze the audio and return ONLY the JSON response.
             },
             { status: 500 }
         );
-    } finally {
-        clearTimeout(timeoutId);
     }
 }
 

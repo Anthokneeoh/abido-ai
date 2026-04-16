@@ -26,4 +26,4 @@ pnpm-debug.log*
 .env*.local
 
 # vercel
-.vercel
+.verceltsconfig.tsbuildinfo
