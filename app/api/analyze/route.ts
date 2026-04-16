@@ -1,40 +1,43 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-// Initialize Gemini AI client
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
+// Validate API key at startup
+const apiKey = process.env.GOOGLE_API_KEY;
+if (!apiKey) {
+    console.error("Missing GOOGLE_API_KEY environment variable");
+}
 
 export async function POST(request: Request) {
-    try {
-        // Parse form data to get audio file
-        const formData = await request.formData();
-        const audioFile = formData.get("audio") as File;
+    // AbortController for timeout (30 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        // Validate audio file exists
+    try {
+        // 1. Parse and validate audio file
+        const formData = await request.formData();
+        const audioFile = formData.get("audio") as File | null;
+
         if (!audioFile) {
-            return NextResponse.json(
-                { error: "No audio file provided" },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
         }
 
-        console.log("Received audio file:", audioFile.size, "bytes");
+        // Size limit: 10 MB
+        if (audioFile.size > 10 * 1024 * 1024) {
+            return NextResponse.json({ error: "Audio file too large (max 10 MB)" }, { status: 400 });
+        }
 
-        // Convert audio to base64 for Gemini API
+        const mimeType = audioFile.type || "audio/webm";
+        if (!mimeType.startsWith("audio/")) {
+            return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+        }
+
+        console.log(`Received audio: ${audioFile.size} bytes, type: ${mimeType}`);
+
+        // 2. Convert audio to base64
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
-        // Configure Gemini model
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-pro",
-            generationConfig: {
-                temperature: 0.3,
-                topP: 0.85,
-                topK: 40,
-            }
-        });
-
-        // Enhanced system prompt with validation, safety, and scoring
+        // 3. Your full system prompt (restored exactly)
         const prompt = `
 # ABIDO AI - SPEECH ANALYSIS SYSTEM v2.2
 
@@ -234,33 +237,43 @@ IF confidence_score > 75:
 Now analyze the audio and return ONLY the JSON response.
 `;
 
-        console.log("Sending audio to Gemini API for analysis...");
+        // 4. Initialize Google GenAI (new SDK)
+        const genAI = new GoogleGenAI({ apiKey: apiKey! });
 
-        // Send to Gemini
-        const result = await model.generateContent([
-            prompt,
-            {
-                inlineData: {
-                    mimeType: "audio/webm",
-                    data: base64Audio,
+        // 5. Call Gemini 3 Flash Preview with audio
+        const response = await genAI.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: [
+                { text: prompt },
+                {
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64Audio,
+                    },
                 },
+            ],
+            config: {
+                temperature: 0.3,
+                topP: 0.85,
+                topK: 40,
             },
-        ]);
+        }, { signal: controller.signal });
 
-        const responseText = result.response.text();
+        const responseText = response.text;
+        if (!responseText) {
+            throw new Error("Empty response from Gemini API");
+        }
+
         console.log("Raw API response preview:", responseText.substring(0, 200));
 
-        // Clean JSON extraction
+        // 6. Clean JSON (remove markdown code blocks)
         let cleanJson = responseText.trim();
-
-        // Remove markdown code blocks if present
         if (cleanJson.includes("```")) {
             cleanJson = cleanJson.replace(/```json\n?/g, "").replace(/```\n?$/g, "").replace(/```/g, "");
         }
-
         cleanJson = cleanJson.trim();
 
-        // Parse JSON response
+        // 7. Parse JSON
         let feedback;
         try {
             feedback = JSON.parse(cleanJson);
@@ -269,19 +282,11 @@ Now analyze the audio and return ONLY the JSON response.
             throw new Error("AI returned invalid JSON format");
         }
 
-        // Validate all required fields exist
+        // 8. Validate required fields
         const requiredFields = [
-            "transcript",
-            "confidence_score",
-            "overall_vibe",
-            "energy_level",
-            "filler_words",
-            "filler_count",
-            "strength",
-            "improvement_tip",
-            "encouragement"
+            "transcript", "confidence_score", "overall_vibe", "energy_level",
+            "filler_words", "filler_count", "strength", "improvement_tip", "encouragement"
         ];
-
         for (const field of requiredFields) {
             if (!(field in feedback)) {
                 console.error("Missing required field:", field);
@@ -289,43 +294,37 @@ Now analyze the audio and return ONLY the JSON response.
             }
         }
 
-        // Parse confidence score with proper NaN handling
-        const rawScore = feedback.confidence_score;
-        let finalScore = parseInt(rawScore);
-
-        // Critical fix: Only use fallback if parse actually failed (NaN)
+        // 9. Sanitize numeric fields
+        let finalScore = parseInt(feedback.confidence_score);
         if (isNaN(finalScore)) {
             console.warn("Score parsing failed, using conservative fallback");
-            finalScore = 30; // Conservative fallback for unclear audio
+            finalScore = 30;
         }
-
-        // Ensure score is within valid range (0-100)
         feedback.confidence_score = Math.max(0, Math.min(100, finalScore));
-
-        // Parse filler count
         feedback.filler_count = parseInt(feedback.filler_count) || 0;
 
-        console.log("Analysis completed successfully:", {
+        console.log("Analysis completed:", {
             score: feedback.confidence_score,
             vibe: feedback.overall_vibe,
             fillers: feedback.filler_count,
-            transcriptLength: feedback.transcript.length
         });
 
         return NextResponse.json(feedback);
-
     } catch (error: any) {
         console.error("System error during analysis:", error);
-
-        // Return user-friendly error response
+        if (error.name === "AbortError") {
+            return NextResponse.json({ error: "Request timeout" }, { status: 504 });
+        }
         return NextResponse.json(
             {
                 error: "Analysis failed. Please try recording again.",
                 details: error.message || "Unknown error",
-                suggestion: "Record 30-90 seconds of clear speech in a quiet environment."
+                suggestion: "Record 30-90 seconds of clear speech in a quiet environment.",
             },
             { status: 500 }
         );
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
 
@@ -333,9 +332,9 @@ Now analyze the audio and return ONLY the JSON response.
 export async function GET() {
     return NextResponse.json({
         status: "Operational",
-        model: "gemini-2.5-pro",
+        model: "gemini-3-flash-preview",
         version: "2.2-production",
         timestamp: new Date().toISOString(),
-        ready_for_demo: true
+        ready_for_demo: true,
     });
 }
