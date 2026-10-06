@@ -1,8 +1,4 @@
 import { NextResponse } from "next/server";
-import { spawn } from "child_process";
-import ffmpegPath from "ffmpeg-static";
-
-export const runtime = "nodejs";
 
 const apiKey = process.env.NOVITA_API_KEY;
 
@@ -13,87 +9,6 @@ const REQUEST_TIMEOUT = 30000;
 
 if (!apiKey) {
     console.error("Missing NOVITA_API_KEY environment variable");
-}
-
-/**
- * Convert browser-recorded WebM/Opus audio to WAV.
- *
- * MiMo expects supported audio such as WAV/MP3.
- * Browser MediaRecorder commonly produces audio/webm,
- * so we normalize everything to 16 kHz mono PCM WAV.
- */
-async function convertToWav(input: Buffer): Promise<Buffer> {
-    if (!ffmpegPath) {
-        throw new Error("FFmpeg binary is not available");
-    }
-
-    const executablePath = ffmpegPath;
-
-    return new Promise((resolve, reject) => {
-        const ffmpeg = spawn(executablePath, [
-            "-hide_banner",
-            "-loglevel",
-            "error",
-
-            // Read WebM/Opus from stdin
-            "-i",
-            "pipe:0",
-
-            // Normalize audio
-            "-ac",
-            "1",
-            "-ar",
-            "16000",
-            "-c:a",
-            "pcm_s16le",
-
-            // Output WAV to stdout
-            "-f",
-            "wav",
-            "pipe:1",
-        ]);
-
-        const outputChunks: Buffer[] = [];
-        const errorChunks: Buffer[] = [];
-
-        ffmpeg.stdout.on("data", (chunk: Buffer) => {
-            outputChunks.push(chunk);
-        });
-
-        ffmpeg.stderr.on("data", (chunk: Buffer) => {
-            errorChunks.push(chunk);
-        });
-
-        ffmpeg.on("error", (error) => {
-            reject(error);
-        });
-
-        ffmpeg.on("close", (code) => {
-            if (code === 0) {
-                resolve(Buffer.concat(outputChunks));
-                return;
-            }
-
-            const errorMessage = Buffer.concat(errorChunks)
-                .toString("utf8")
-                .trim();
-
-            reject(
-                new Error(
-                    `FFmpeg conversion failed${errorMessage ? `: ${errorMessage}` : ""}`
-                )
-            );
-        });
-
-        ffmpeg.stdin.on("error", (error: NodeJS.ErrnoException) => {
-            // Ignore EPIPE because FFmpeg may close stdin after a conversion error.
-            if (error.code !== "EPIPE") {
-                reject(error);
-            }
-        });
-
-        ffmpeg.stdin.end(input);
-    });
 }
 
 export async function POST(request: Request) {
@@ -131,7 +46,7 @@ export async function POST(request: Request) {
         }
 
         // 4. Validate MIME type
-        const mimeType = audioFile.type || "audio/webm";
+        const mimeType = audioFile.type || "audio/wav";
 
         if (!mimeType.startsWith("audio/")) {
             return NextResponse.json(
@@ -149,16 +64,31 @@ export async function POST(request: Request) {
 
         // 5. Read browser audio
         const arrayBuffer = await audioFile.arrayBuffer();
-        const inputBuffer = Buffer.from(arrayBuffer);
+        const wavBuffer = Buffer.from(arrayBuffer);
 
-        // 6. Convert browser WebM audio to WAV
-        console.log("Converting audio to WAV...");
+        // 6. Validate WAV header signature (RIFF ... WAVE)
+        if (wavBuffer.length < 44) {
+            return NextResponse.json(
+                {
+                    error: "Invalid audio file",
+                    details: "Audio file is too small to be a valid WAV file",
+                },
+                { status: 400 }
+            );
+        }
 
-        const wavBuffer = await convertToWav(inputBuffer);
+        const riffHeader = wavBuffer.subarray(0, 4).toString("ascii");
+        const waveHeader = wavBuffer.subarray(8, 12).toString("ascii");
 
-        console.log(
-            `Audio converted successfully: ${wavBuffer.length} bytes WAV`
-        );
+        if (riffHeader !== "RIFF" || waveHeader !== "WAVE") {
+            return NextResponse.json(
+                {
+                    error: "Invalid audio format",
+                    details: "Expected WAV audio (RIFF/WAVE header required)",
+                },
+                { status: 400 }
+            );
+        }
 
         // 7. Convert WAV to base64
         const base64Audio = wavBuffer.toString("base64");

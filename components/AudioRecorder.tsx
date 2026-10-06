@@ -235,16 +235,153 @@ export function AudioRecorder() {
         }
     }
 
+    /**
+     * Linear interpolation resampler for single-channel audio PCM data.
+     */
+    function resampleAudio(audioData: Float32Array, sourceSampleRate: number, targetSampleRate: number): Float32Array {
+        if (sourceSampleRate === targetSampleRate) {
+            return audioData
+        }
+        const ratio = sourceSampleRate / targetSampleRate
+        const newLength = Math.round(audioData.length / ratio)
+        const result = new Float32Array(newLength)
+
+        for (let i = 0; i < newLength; i++) {
+            const srcIndex = i * ratio
+            const indexBefore = Math.floor(srcIndex)
+            const indexAfter = Math.min(indexBefore + 1, audioData.length - 1)
+            const frac = srcIndex - indexBefore
+            result[i] = audioData[indexBefore] * (1 - frac) + audioData[indexAfter] * frac
+        }
+        return result
+    }
+
+    /**
+     * Converts an AudioBuffer into a 16 kHz mono 16-bit signed PCM WAV Blob.
+     */
+    function audioBufferToWav(audioBuffer: AudioBuffer, targetSampleRate = 16000): Blob {
+        const numChannels = audioBuffer.numberOfChannels
+        const sourceLength = audioBuffer.length
+        const sourceSampleRate = audioBuffer.sampleRate
+
+        // 1. Downmix to mono if needed
+        let monoData: Float32Array
+        if (numChannels === 1) {
+            monoData = audioBuffer.getChannelData(0)
+        } else {
+            monoData = new Float32Array(sourceLength)
+            const channelData = Array.from(
+                { length: numChannels },
+                (_, c) => audioBuffer.getChannelData(c)
+            )
+
+            for (let i = 0; i < sourceLength; i++) {
+                let sum = 0
+                for (let c = 0; c < numChannels; c++) {
+                    sum += channelData[c][i]
+                }
+                monoData[i] = sum / numChannels
+            }
+        }
+
+        // 2. Resample to target sample rate (16 kHz)
+        const resampledData = resampleAudio(monoData, sourceSampleRate, targetSampleRate)
+
+        // 3. Construct WAV container (44-byte header + PCM 16-bit little-endian samples)
+        const numSamples = resampledData.length
+        const bitsPerSample = 16
+        const bytesPerSample = bitsPerSample / 8 // 2 bytes
+        const dataSize = numSamples * bytesPerSample
+        const headerSize = 44
+        const totalSize = headerSize + dataSize
+
+        const buffer = new ArrayBuffer(totalSize)
+        const view = new DataView(buffer)
+
+        const writeString = (offset: number, str: string) => {
+            for (let i = 0; i < str.length; i++) {
+                view.setUint8(offset + i, str.charCodeAt(i))
+            }
+        }
+
+        // RIFF chunk descriptor
+        writeString(0, "RIFF")
+        view.setUint32(4, 36 + dataSize, true) // ChunkSize: 36 + Subchunk2Size
+        writeString(8, "WAVE")
+
+        // "fmt " sub-chunk
+        writeString(12, "fmt ")
+        view.setUint32(16, 16, true)                                // Subchunk1Size (16 for PCM)
+        view.setUint16(20, 1, true)                                 // AudioFormat (1 = PCM)
+        view.setUint16(22, 1, true)                                 // NumChannels (1 = Mono)
+        view.setUint32(24, targetSampleRate, true)                  // SampleRate (16000)
+        view.setUint32(28, targetSampleRate * 1 * bytesPerSample, true) // ByteRate (16000 * 1 * 2 = 32000)
+        view.setUint16(32, 1 * bytesPerSample, true)                // BlockAlign (1 * 2 = 2)
+        view.setUint16(34, bitsPerSample, true)                     // BitsPerSample (16)
+
+        // "data" sub-chunk
+        writeString(36, "data")
+        view.setUint32(40, dataSize, true)                          // Subchunk2Size
+
+        // Write PCM 16-bit signed integer samples (little-endian)
+        let offset = 44
+        for (let i = 0; i < numSamples; i++) {
+            // Clamp floating-point sample to [-1, 1]
+            const s = Math.max(-1, Math.min(1, resampledData[i]))
+            // Scale to 16-bit signed integer range [-32768, 32767]
+            const sample16 = s < 0 ? Math.round(s * 32768) : Math.round(s * 32767)
+            const clamped16 = Math.max(-32768, Math.min(32767, sample16))
+            view.setInt16(offset, clamped16, true)
+            offset += 2
+        }
+
+        return new Blob([buffer], { type: "audio/wav" })
+    }
+
+    /**
+     * Decodes a recorded WebM audio Blob and encodes it to a 16 kHz mono WAV Blob.
+     */
+    async function convertWebmBlobToWav(webmBlob: Blob): Promise<Blob> {
+        const arrayBuffer = await webmBlob.arrayBuffer()
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+        if (!AudioContextClass) {
+            throw new Error("Web Audio API is not supported in this browser")
+        }
+
+        const audioCtx = new AudioContextClass()
+
+        try {
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0))
+            return audioBufferToWav(audioBuffer, 16000)
+        } catch (err) {
+            console.error("Audio decoding/conversion failed:", err)
+            throw new Error("Failed to process audio recording. Please try speaking again.")
+        } finally {
+            if (audioCtx.state !== "closed") {
+                try {
+                    await audioCtx.close()
+                } catch (closeErr) {
+                    console.warn("AudioContext close error:", closeErr)
+                }
+            }
+        }
+    }
+
     const analyzeAudio = async (audioBlob: Blob) => {
         setIsLoading(true)
         setLoadingMsgIndex(0)
         setError("")
 
         const minDelayPromise = new Promise(resolve => setTimeout(resolve, 3000))
-        const formData = new FormData()
-        formData.append("audio", audioBlob, "speech.webm")
 
         try {
+            // 1. Convert WebM audio to 16 kHz mono WAV in the browser
+            const wavBlob = await convertWebmBlobToWav(audioBlob)
+
+            // 2. Prepare multipart/form-data payload with WAV audio
+            const formData = new FormData()
+            formData.append("audio", wavBlob, "speech.wav")
+
             const fetchPromise = fetch("/api/analyze", {
                 method: "POST",
                 body: formData,
@@ -253,7 +390,16 @@ export function AudioRecorder() {
             const [response] = await Promise.all([fetchPromise, minDelayPromise])
 
             if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`)
+                let errorMessage = `Server error: ${response.status}`
+                try {
+                    const errData = await response.json()
+                    if (errData.error) {
+                        errorMessage = errData.error + (errData.details ? `: ${errData.details}` : "")
+                    }
+                } catch {
+                    // ignore non-json error responses
+                }
+                throw new Error(errorMessage)
             }
 
             const data = await response.json()
