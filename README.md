@@ -1,44 +1,89 @@
+# 🗣️ Abido AI
 
-# 🗣️ Voice Analysis Tool (Gemini 3) 🎙️
+**Abido AI is a voice coaching tool that helps you improve your public speaking.**
 
-A Next.js serverless API powered by **Google Gemini 3 Pro** for advanced speech analysis.  
-Uploads audio, validates quality, and returns structured JSON feedback on clarity, confidence, pacing, filler words, and overall delivery.
+Record a short speech and get AI-powered feedback on your confidence, pacing, clarity, filler words, energy, and overall delivery.
 
----
+## ✨ What It Does
 
-## 🚀 Features
-- Audio validation (silence, profanity, unclear speech)
-- Full speech analysis across 6 dimensions
-- Confidence scoring (0–100) with vibe mapping
-- Filler word detection & counts
-- Actionable improvement tips + encouragement
-- Health check endpoint for monitoring
+- 🎙️ Records your speech directly in the browser
+- 📝 Generates a transcript of your speech
+- 📊 Scores your delivery across key speaking skills
+- 💬 Identifies filler words and speaking patterns
+- 💡 Highlights your strengths and areas for improvement
+- 🚀 Provides practical feedback to help you become a better speaker
 
----
+## 📋 What You Get
 
-## 🛠 Tech Stack
-- Next.js (App Router)
+After each recording, Abido AI provides:
+
+- **Confidence Score** from 0–100
+- **Overall Vibe** such as Confident, Natural, Nervous, or Rushed
+- **Energy Level**
+- **Filler Words** and their frequency
+- **Strength** highlighting what you did well
+- **Priority Fix** identifying what to work on next
+- **Encouragement** to help you keep improving
+- **Transcript** of your speech
+
+## 🛠️ Built With
+
+- Next.js
 - TypeScript
-- Google Generative AI SDK (Gemini 3 Pro)
+- React
+- Novita AI
+- Xiaomi MiMo V2.6 Flash
 
----
+## 🚀 Getting Started
 
-## ⚙️ Usage
+### Install
+
 ```bash
 npm install
+```
+
+### Run locally
+
+```bash
 npm run dev
 ```
 
-Send a `POST` request with an audio file (`audio` field in form-data).  
-Response: JSON with transcript, scores, filler counts, strengths, and improvement tips.
+The app will be available at:
 
----
+```text
+http://localhost:3000
+```
 
-## 📡 API Endpoints
-- `POST /api/analyze` → Analyze uploaded audio
-- `GET /api/analyze` → Health check (status, model, version)
+### Environment Variables
 
----
+Create a `.env.local` file and add your Novita AI API key:
+
+```env
+NOVITA_API_KEY=your_api_key_here
+```
+
+Keep your API key private and do not commit `.env.local` to the repository.
+
+## 🔌 API
+
+### Analyze Speech
+
+```text
+POST /api/analyze
+```
+
+Send an audio recording using the `audio` form-data field.
+
+The API returns the transcript, confidence score, speaking characteristics, filler-word analysis, strengths, and improvement feedback.
+
+### Health Check
+
+```text
+GET /api/analyze
+```
+
+Returns the current status of the analysis service.
 
 ## 📄 License
-Proprietary – Internal Use
+
+Proprietary. Internal use only.
