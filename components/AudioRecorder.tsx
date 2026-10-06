@@ -491,7 +491,7 @@ export function AudioRecorder() {
                         <div className="w-48 h-1.5 bg-gray-800 rounded-full mt-4 overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-pink-500 to-purple-500 animate-pulse w-full"></div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-6 font-mono">Powered by Gemini's latest Pro Model</p>
+                        <p className="text-xs text-gray-500 mt-6 font-mono">Powered by Open Weight LLMs</p>
                     </div>
                 )}
 
@@ -589,7 +589,7 @@ export function AudioRecorder() {
             {/* FOOTER - Fixed typo and responsive */}
             <div className="text-xs text-gray-600 text-center mt-2 px-4">
                 <p className="font-medium text-gray-400 mb-0.5">
-                    Powered by Gemini's latest Pro Model
+                    Powered by Open Weight LLMs
                 </p>
                 <p className="text-gray-500">
                     Analysis is experimental
