@@ -5,7 +5,7 @@ const apiKey = process.env.NOVITA_API_KEY;
 const MODEL = "xiaomimimo/mimo-v2.6-flash";
 const NOVITA_URL = "https://api.novita.ai/openai/v1/chat/completions";
 const MAX_AUDIO_SIZE = 10 * 1024 * 1024;
-const REQUEST_TIMEOUT = 30000;
+const REQUEST_TIMEOUT = 60000;
 
 if (!apiKey) {
     console.error("Missing NOVITA_API_KEY environment variable");
