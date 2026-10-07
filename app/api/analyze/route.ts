@@ -320,10 +320,6 @@ Now analyze the audio and return ONLY the JSON response.
 `;
 
         // 8. Build OpenAI-compatible Novita request
-        //
-        // IMPORTANT:
-        // MiMo expects raw base64 audio here, not a data URL.
-        // The audio has already been normalized to WAV.
         const requestBody = {
             model: MODEL,
             messages: [
